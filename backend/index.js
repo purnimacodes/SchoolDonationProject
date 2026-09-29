@@ -1,22 +1,18 @@
-const express = require('express');
-const app = express();
-const bodyParser = require('body-parser');
-const cors = require('cors');
-const authRouter = require('./Routers/authRoutes');
+import dotenv from "dotenv"
+import { app } from "./app.js";  // Import the configured app
+import connectdb from "./db/index.js";
 
-require('dotenv').config();
-require('./Models/db');
+dotenv.config({
+  path:"./.env"
+})
 
-const PORT = process.env.PORT || 8080;
 
-app.get('/ping', (req, res) => {
-  res.send('PONG');
-});
-
-app.use(bodyParser.json());
-app.use(cors());
-app.use('/auth', authRouter);
-
-app.listen(PORT, () => {
-  console.log(`Server is running on ${PORT}`)
+connectdb().then(()=>{
+  app.listen(process.env.PORT , ()=>{
+    console.log(`server is running at port : ${process.env.PORT}  `);
+    
+  })
+}).catch((err)=>{
+  console.log('mongodb connection fail',err);
+  
 })

@@ -1,30 +1,27 @@
-const jwt = require("jsonwebtoken");
+import { apiError } from "../utils/apiError.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import jwt from "jsonwebtoken";
+import { User } from "../Models/user.model.js";
 
-const authMiddleware = (req, res, next) => {
+ export const verifyJWT = asyncHandler(async (req,res,next)=>{
   try {
-    const authHeader = req.headers.authorization;
-
-    if(!authHeader || !authHeader.startsWith("Bearer")) {
-      return res.status(401).json({
-        message:"Acess token required",
-      });
+     const token = req.cookies?.accessToken|| req.header("Authorization")?.replace("Bearer ","");
+  
+     if (!token) {
+      throw new apiError(401,"Unathorized request")
+     }
+  
+    const decodedToken = await jwt.verify(token,process.env.ACCESS_TOKEN_SECRET)
+  
+    const user = await User.findById(decodedToken?._id).select("-password -refreshToken")
+  
+    if (!user) {
+      throw new apiError(401,"invalid Access token")
     }
-
-    const token = authHeader.split(" ")[1];
-
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET
-    );
-
-    req.user = decoded;
-
+  
+    req.user=user;
     next();
-
   } catch (error) {
-    return res.status(401).json({
-      message: "Invalid or expired token",
-    });
+    throw new apiError(500,"someerror happens");
   }
-  };
-  module.exports = authMiddleware;
+ })
